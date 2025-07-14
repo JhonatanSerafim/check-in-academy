@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check-in Academy</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="api.js"></script>
+    <script src="script.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="form-card">
+            <h1>Check-in Academy</h1>
+            <p class="descricao">
+              Bem-vindo ao Check-in Academy!<br>
+              Registre a sua presença na aula de forma simples e rápida.<br>
+              1. Selecione a turma; 2. Digite o seu nome; 3. Clique em <b>Registrar Check-in</b>.
+            </p>
+            <form>
+                <label for="turma">Turma</label>
+                <div class="custom-select" id="turma-select">
+                    <div class="select-display" data-placeholder="Selecione uma turma">
+                        Selecione uma turma
+                    </div>
+                    <div class="select-options">
+                        <div class="option" data-value="">Selecione uma turma</div>
+                        <div class="option" data-value="Turma 1">Turma 1</div>
+                        <div class="option" data-value="Turma 2">Turma 2</div>
+                        <div class="option" data-value="Turma 3">Turma 3</div>
+                    </div>
+                    <input type="hidden" name="turma" id="turma" value="">
+                </div>
+
+                <label for="aluno">Aluno</label>
+                <input type="text" name="aluno" id="aluno" placeholder="Digite o nome do aluno">
+
+                <button type="submit" class="btn-primary">Registrar Check-in</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
