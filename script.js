@@ -111,6 +111,22 @@ function verificarEstadoBotao() {
     }
 }
 
+// Função para mostrar loading no botão
+function mostrarLoading() {
+    const botao = document.querySelector('.btn-primary');
+    botao.innerHTML = '<div class="loading-content"><span class="loading-spinner"></span>Processando...</div>';
+    botao.classList.add('loading');
+    botao.disabled = true;
+}
+
+// Função para esconder loading no botão
+function esconderLoading() {
+    const botao = document.querySelector('.btn-primary');
+    botao.innerHTML = 'Registrar Check-in';
+    botao.classList.remove('loading');
+    botao.disabled = false;
+}
+
 // 3. Função para selecionar a turma
 function selecionarTurma() {
     const customSelect = document.getElementById('turma-select');
@@ -236,53 +252,67 @@ async function registrarPresenca() {
         return false;
     }
     
-    // Capturar dados
-    const turma = document.getElementById('turma').value;
-    const nomeAluno = document.getElementById('aluno').value.trim();
-    const dataHora = capturarDataHoraLocal();
+    // Mostrar loading
+    mostrarLoading();
     
-    // Criar objeto de registro
-    const registro = {
-        id: Date.now(),
-        turma: turma,
-        aluno: nomeAluno,
-        data: dataHora.data,
-        hora: dataHora.hora,
-        timestamp: dataHora.timestamp,
-        dataCompleta: dataHora.dataCompleta
-    };
-    
-    console.log('Registrando presença:', registro);
-    
-    // Salvar no localStorage (backup local)
-    salvarRegistroLocal(registro);
-    
-    // Tentar enviar para Google Sheets
-    let enviouParaGoogleSheets = false;
-    if (window.GoogleSheetsAPI && window.GoogleSheetsAPI.verificar()) {
-        try {
-            const resultadoAPI = await window.GoogleSheetsAPI.enviar(registro);
-            enviouParaGoogleSheets = resultadoAPI.success;
-            
-            if (resultadoAPI.success) {
-                console.log('✅ Dados enviados para Google Sheets com sucesso');
-            } else {
-                console.log('❌ Erro ao enviar para Google Sheets:', resultadoAPI.error);
+    try {
+        // Capturar dados
+        const turma = document.getElementById('turma').value;
+        const nomeAluno = document.getElementById('aluno').value.trim();
+        const dataHora = capturarDataHoraLocal();
+        
+        // Criar objeto de registro
+        const registro = {
+            id: Date.now(),
+            turma: turma,
+            aluno: nomeAluno,
+            data: dataHora.data,
+            hora: dataHora.hora,
+            timestamp: dataHora.timestamp,
+            dataCompleta: dataHora.dataCompleta
+        };
+        
+        console.log('Registrando presença:', registro);
+        
+        // Salvar no localStorage (backup local)
+        salvarRegistroLocal(registro);
+        
+        // Tentar enviar para Google Sheets
+        if (window.GoogleSheetsAPI && window.GoogleSheetsAPI.verificar()) {
+            try {
+                const resultadoAPI = await window.GoogleSheetsAPI.enviar(registro);
+                
+                if (resultadoAPI.success) {
+                    console.log('✅ Dados enviados para Google Sheets com sucesso');
+                } else {
+                    console.log('❌ Erro ao enviar para Google Sheets:', resultadoAPI.error);
+                }
+            } catch (error) {
+                console.error('❌ Erro na comunicação com Google Sheets:', error);
             }
-        } catch (error) {
-            console.error('❌ Erro na comunicação com Google Sheets:', error);
+        } else {
+            console.log('⚠️ API do Google Sheets não disponível - salvando apenas localmente');
         }
-    } else {
-        console.log('⚠️ API do Google Sheets não disponível - salvando apenas localmente');
+        
+        // Garantir tempo mínimo de loading para melhor UX
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        // Mostrar mensagem de sucesso
+        mostrarSucesso(registro);
+        
+        // Limpar formulário
+        limparFormulario();
+        
+        return true;
+        
+    } catch (error) {
+        console.error('Erro ao registrar presença:', error);
+        alert('Erro ao registrar presença. Tente novamente.');
+        return false;
+    } finally {
+        // Esconder loading
+        esconderLoading();
     }
-    
-    // Mostrar mensagem de sucesso
-    mostrarSucesso(registro, enviouParaGoogleSheets);
-    
-    // Limpar formulário
-    limparFormulario();
-    
-    return true;
 }
 
 // Função auxiliar para salvar no localStorage
@@ -294,15 +324,10 @@ function salvarRegistroLocal(registro) {
 }
 
 // Função auxiliar para mostrar sucesso
-function mostrarSucesso(registro, enviouParaGoogleSheets = false) {
+function mostrarSucesso(registro) {
     // Criar overlay do modal
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
-    
-    // Status de envio
-    const statusEnvio = enviouParaGoogleSheets 
-        ? '<div class="status-api sucesso">📊 Enviado para Google Sheets</div>'
-        : '<div class="status-api local">💾 Salvo localmente (verifique conexão)</div>';
     
     // Criar modal
     const modal = document.createElement('div');
@@ -323,7 +348,6 @@ function mostrarSucesso(registro, enviouParaGoogleSheets = false) {
                 <div class="info-item">
                     <strong>Data/Hora:</strong> ${registro.dataCompleta}
                 </div>
-                ${statusEnvio}
             </div>
             <div class="modal-footer">
                 <button class="btn-modal-ok" onclick="fecharModalSucesso()">OK</button>
@@ -401,9 +425,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (window.GoogleSheetsAPI) {
         if (window.GoogleSheetsAPI.verificar()) {
             console.log('✅ API Google Sheets disponível');
-            
-            // Opcional: Testar conexão na inicialização (descomente se quiser)
-            // window.GoogleSheetsAPI.testar();
         } else {
             console.log('⚠️ API Google Sheets não configurada corretamente');
         }
